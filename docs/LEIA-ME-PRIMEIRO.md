@@ -75,6 +75,9 @@ Internet e conversa:
 	abrem uma pesquisa automaticamente;
 - os comandos aceitam variações como "aumenta o som", "abaixa o volume",
 	"pula a música", "dá play" e "JARB, por favor, pausa a música";
+- "abrir Spotify" abre o aplicativo instalado ou o site do Spotify;
+- para pausa e troca de faixa, o JARB envia o comando ao Android, mas a
+	confirmação depende do aplicativo de música e da central Bluetooth.
 - "JARB bom dia", "JARB ajuda" e "JARB o que você sabe fazer" têm respostas
 	próprias;
 - o app não é um modelo de IA online: para respostas generativas seria

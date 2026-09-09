@@ -184,18 +184,21 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         } else if (hasAny(q, "volume minimo", "som minimo", "silenciar", "tirar o som", "sem som", "mudo")) {
             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0);
             answer = "Som silenciado.";
-        } else if (hasAny(q, "pausar musica", "pausar a musica", "pausa musica", "pause a musica", "pare a musica", "parar musica", "pause")) {
+        } else if (hasAny(q, "abrir spotify", "abre o spotify", "abrir o spotify", "spotify", "tocar spotify")) {
+            openSpotify();
+            answer = "Abrindo o Spotify.";
+        } else if (hasAny(q, "pausar musica", "pausar a musica", "pausa musica", "pausa a musica", "pause a musica", "coloca em pausa", "pare a musica", "parar musica", "pause")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE);
-            answer = "Música pausada.";
-        } else if (hasAny(q, "continuar musica", "continuar a musica", "continua musica", "continua a musica", "retomar musica", "retome musica", "da play")) {
+            answer = "Enviando comando para pausar a música.";
+        } else if (hasAny(q, "continuar musica", "continuar a musica", "continua musica", "continua a musica", "retomar musica", "retome musica", "voltar a tocar", "da play")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
-            answer = "Continuando a música.";
-        } else if (hasAny(q, "proxima musica", "proxima a musica", "proxima faixa", "proxima", "seguinte", "trocar musica", "mudar musica", "troca musica", "muda musica", "pular musica")) {
+            answer = "Enviando comando para continuar a música.";
+        } else if (hasAny(q, "proxima musica", "proxima a musica", "proxima faixa", "proxima", "seguinte", "trocar musica", "mudar musica", "troca musica", "muda musica", "pular musica", "pula musica")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_NEXT);
-            answer = "Avançando para a próxima música.";
-        } else if (hasAny(q, "musica anterior", "faixa anterior", "voltar musica", "voltar faixa", "anterior")) {
+            answer = "Enviando comando para a próxima música.";
+        } else if (hasAny(q, "musica anterior", "faixa anterior", "voltar musica", "voltar faixa", "musica passada", "anterior")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PREVIOUS);
-            answer = "Voltando para a música anterior.";
+            answer = "Enviando comando para a música anterior.";
         } else if (hasAny(q, "tocar musica", "tocar a musica", "tocar", "iniciar musica", "inicia musica", "dar play", "da play", "play", "reproduzir musica")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
             answer = "Iniciando a música.";
@@ -298,6 +301,15 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     private void openBluetoothSettings() {
         startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
+    }
+
+    private void openSpotify() {
+        Intent spotify = getPackageManager().getLaunchIntentForPackage("com.spotify.music");
+        if (spotify != null) {
+            startActivity(spotify);
+        } else {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://open.spotify.com/")));
+        }
     }
 
     private void openWebSearch(String query) {
