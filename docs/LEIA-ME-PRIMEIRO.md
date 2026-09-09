@@ -41,5 +41,12 @@ Depois:
 4. Toque em OUVIR JARBAS.
 5. Fale normalmente.
 
+Comandos de mídia disponíveis:
+- "aumentar o volume", "diminuir o volume" ou "silenciar";
+- "tocar música", "pausar a música" ou "continuar a música";
+- "próxima música" ou "música anterior";
+- "abrir Bluetooth" ou "conectar na central" para abrir as configurações e
+	conectar manualmente a CAR-KIT.
+
 ## Próxima etapa
 Para ligar sensores reais do Gol, use um microcontrolador separado e protegido. O aplicativo não deve comandar direção, freios ou acelerador.
