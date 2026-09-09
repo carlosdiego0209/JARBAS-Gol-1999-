@@ -27,6 +27,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private TextView status;
     private AudioManager audioManager;
     private boolean conversation = false;
+    private boolean silentMode = false;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -85,6 +86,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         stop.setOnClickListener(v -> {
             conversation = false;
+            silentMode = false;
             recognizer.cancel();
             status.setText("JARBAS em espera.");
         });
@@ -105,17 +107,27 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         }
 
         q = q.replace("jarbas", "").trim();
+
+        if (hasAny(q, "silencio", "fique em silencio", "fica em silencio", "pare de ouvir",
+                "parar de ouvir", "desligue o microfone", "desativar escuta")) {
+            silentMode = true;
+            conversation = true;
+            status.setText("JARBAS em silêncio. Diga JARBAS para reativar.");
+            listenAgain();
+            return;
+        }
+
         if (q.isEmpty()) {
-            status.setText("Modo mãos-livres ativo.");
+            silentMode = false;
+            conversation = true;
+            status.setText("JARBAS ativo. Diga o comando.");
             if (conversation) status.postDelayed(() -> listenAgain(), 300);
             return;
         }
 
-        if (hasAny(q, "fique em silencio", "fica em silencio", "pare de ouvir",
-                "parar de ouvir", "desligue o microfone", "desativar escuta")) {
-            conversation = false;
-            recognizer.cancel();
-            status.setText("JARBAS em silêncio.");
+        if (silentMode) {
+            status.setText("JARBAS em silêncio. Diga apenas JARBAS para reativar.");
+            if (conversation) status.postDelayed(() -> listenAgain(), 300);
             return;
         }
 
