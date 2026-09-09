@@ -50,6 +50,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         speechIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR");
         speechIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
         speechIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
+        speechIntent.putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true);
         speechIntent.putExtra("android.speech.extra.BEEP_SOUND", false);
 
         recognizer = SpeechRecognizer.createSpeechRecognizer(this);
@@ -60,8 +61,12 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             public void onBufferReceived(byte[] b) {}
             public void onEndOfSpeech() { status.setText("Processando..."); }
             public void onError(int e) {
-                conversation = false;
-                status.setText("Toque em OUVIR JARBAS para falar.");
+                if (conversation) {
+                    status.setText("Modo mãos-livres ativo.");
+                    status.postDelayed(() -> listenAgain(), 500);
+                } else {
+                    status.setText("Toque em OUVIR JARBAS para ativar.");
+                }
             }
             public void onResults(Bundle r) {
                 ArrayList<String> a = r.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
@@ -74,7 +79,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         listen.setOnClickListener(v -> {
             conversation = true;
-            status.setText("Fale: JARBAS e seu comando.");
+            status.setText("Modo mãos-livres ativo.");
             listenAgain();
         });
 
@@ -94,15 +99,15 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         String q = normalize(text);
 
         if (!q.startsWith("jarbas")) {
-            conversation = false;
-            status.setText("Não reconheci JARBAS. Toque em OUVIR para tentar novamente.");
+            status.setText("Modo mãos-livres ativo.");
+            if (conversation) status.postDelayed(() -> listenAgain(), 300);
             return;
         }
 
         q = q.replace("jarbas", "").trim();
         if (q.isEmpty()) {
-            conversation = false;
-            status.setText("Diga JARBAS e o comando de uma vez.");
+            status.setText("Modo mãos-livres ativo.");
+            if (conversation) status.postDelayed(() -> listenAgain(), 300);
             return;
         }
         String answer;
@@ -154,7 +159,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         status.setText("JARBAS: " + answer);
         if (!isQuietMediaCommand(q)) say(answer);
-        conversation = false;
+        if (conversation) status.postDelayed(() -> listenAgain(), 1200);
     }
 
     private boolean isQuietMediaCommand(String text) {
