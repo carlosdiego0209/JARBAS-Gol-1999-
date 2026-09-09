@@ -60,8 +60,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             public void onBufferReceived(byte[] b) {}
             public void onEndOfSpeech() { status.setText("Processando..."); }
             public void onError(int e) {
-                status.setText(conversation ? "JARBAS em espera silenciosa." : "Toque em OUVIR para ativar.");
-                if (conversation) status.postDelayed(() -> listenAgain(), 350);
+                conversation = false;
+                status.setText("Toque em OUVIR JARBAS para falar.");
             }
             public void onResults(Bundle r) {
                 ArrayList<String> a = r.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
@@ -74,7 +74,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         listen.setOnClickListener(v -> {
             conversation = true;
-            status.setText("JARBAS em espera silenciosa.");
+            status.setText("Fale: JARBAS e seu comando.");
             listenAgain();
         });
 
@@ -94,15 +94,15 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         String q = normalize(text);
 
         if (!q.startsWith("jarbas")) {
-            status.setText("JARBAS em espera silenciosa.");
-            if (conversation) status.postDelayed(() -> listenAgain(), 500);
+            conversation = false;
+            status.setText("Não reconheci JARBAS. Toque em OUVIR para tentar novamente.");
             return;
         }
 
         q = q.replace("jarbas", "").trim();
         if (q.isEmpty()) {
-            status.setText("JARBAS em espera silenciosa.");
-            if (conversation) status.postDelayed(() -> listenAgain(), 350);
+            conversation = false;
+            status.setText("Diga JARBAS e o comando de uma vez.");
             return;
         }
         String answer;
@@ -154,7 +154,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         status.setText("JARBAS: " + answer);
         if (!isQuietMediaCommand(q)) say(answer);
-        if (conversation) status.postDelayed(() -> listenAgain(), Math.max(1800, answer.length() * 55));
+        conversation = false;
     }
 
     private boolean isQuietMediaCommand(String text) {
