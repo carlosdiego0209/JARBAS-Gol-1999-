@@ -42,7 +42,8 @@ Depois:
 5. Fale normalmente.
 
 Comandos de mídia disponíveis:
-- diga "JARB" antes de cada comando; frases sem essa palavra são ignoradas;
+- depois de tocar em OUVIR JARB, diga diretamente o comando; "JARB" também
+	pode ser usado, mas não é obrigatório nesse modo;
 - "JARB", "JARBS" e "JARBAS" são aceitos como nomes de ativação;
 - "aumentar o volume", "diminuir o volume" ou "silenciar";
 - "tocar música", "pausar a música" ou "continuar a música";

@@ -121,13 +121,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         String q = normalize(text);
         q = removeOptionalAssistantPrefix(q);
 
-        if (!startsWithAssistantName(q)) {
-            status.setText("JARB aguardando o nome.");
-            if (conversation) status.postDelayed(() -> listenAgain(), 300);
-            return;
+        if (startsWithAssistantName(q)) {
+            q = q.replaceFirst("^jarb(?:as|s)?\\s*", "").trim();
         }
-
-        q = q.replaceFirst("^jarb(?:as|s)?\\s*", "").trim();
 
         if (hasAny(q, "silencio", "fique em silencio", "fica em silencio", "modo silencio", "pare de ouvir",
             "parar de ouvir", "desligue o microfone", "desativar escuta")) {
