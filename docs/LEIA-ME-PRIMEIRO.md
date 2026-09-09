@@ -43,6 +43,7 @@ Depois:
 
 Comandos de mídia disponíveis:
 - diga "JARB" antes de cada comando; frases sem essa palavra são ignoradas;
+- "JARB", "JARBS" e "JARBAS" são aceitos como nomes de ativação;
 - "aumentar o volume", "diminuir o volume" ou "silenciar";
 - "tocar música", "pausar a música" ou "continuar a música";
 - "próxima música" ou "música anterior";
@@ -69,10 +70,16 @@ Memória local:
 
 Internet e conversa:
 - "JARB pesquise novidades sobre o Gol 1999" abre uma busca no navegador;
+- "JARB o que é injeção eletrônica?" e "JARB como funciona um motor?" também
+	abrem uma pesquisa automaticamente;
 - "JARB bom dia", "JARB ajuda" e "JARB o que você sabe fazer" têm respostas
 	próprias;
 - o app não é um modelo de IA online: para respostas generativas seria
 	necessário um servidor seguro com uma chave protegida fora do APK.
+
+O acesso à internet não é ilimitado: depende da conexão, do navegador e dos
+serviços externos. O JARB não envia áudio ou aprende sozinho com a internet;
+ele guarda aliases e preferências localmente e abre buscas quando solicitado.
 
 A permissão de internet está disponível para uma futura integração com um
 servidor de IA. Para aprendizado online real será necessário configurar um

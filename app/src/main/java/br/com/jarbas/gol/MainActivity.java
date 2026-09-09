@@ -104,16 +104,15 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     private void respond(String text) {
         String q = normalize(text);
+        q = removeOptionalAssistantPrefix(q);
 
-        if (!q.startsWith("jarb")) {
+        if (!startsWithAssistantName(q)) {
             status.setText("JARB aguardando o nome.");
             if (conversation) status.postDelayed(() -> listenAgain(), 300);
             return;
         }
 
-        q = q.startsWith("jarbs")
-                ? q.replaceFirst("^jarbs\\s*", "").trim()
-                : q.replaceFirst("^jarb\\s*", "").trim();
+        q = q.replaceFirst("^jarb(?:as|s)?\\s*", "").trim();
 
         if (hasAny(q, "silencio", "fique em silencio", "fica em silencio", "pare de ouvir",
                 "parar de ouvir", "desligue o microfone", "desativar escuta")) {
@@ -160,8 +159,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             answer = greetingForTime();
         } else if (hasAny(q, "o que voce sabe fazer", "ajuda", "comandos", "o que voce consegue")) {
             answer = "Posso conversar, pesquisar na internet, controlar volume e música, abrir o Bluetooth e guardar preferências que você me ensinar.";
-        } else if (hasAny(q, "pesquise", "pesquisar", "procure na internet", "buscar na internet", "veja na internet", "noticias sobre")) {
-            String search = q.replaceFirst("^(pesquise|pesquisar|procure na internet|buscar na internet|veja na internet|noticias sobre)\\s*", "").trim();
+        } else if (hasAny(q, "pesquise", "pesquisar", "procure", "buscar", "veja na internet", "noticias sobre", "o que e", "quem foi", "como funciona", "qual e")) {
+            String search = q.replaceFirst("^(pesquise|pesquisar|procure(?: na internet)?|buscar(?: na internet)?|veja na internet|noticias sobre|o que e|quem foi|como funciona|qual e)\\s*", "").trim();
+            if (search.isEmpty()) search = q;
             openWebSearch(search);
             answer = "Abrindo uma pesquisa na internet.";
         } else if (q.contains("como esta") || q.contains("estado do carro") || q.equals("carro")) {
@@ -239,6 +239,14 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             if (text.contains(option)) return true;
         }
         return false;
+    }
+
+    private String removeOptionalAssistantPrefix(String text) {
+        return text.replaceFirst("^(ia|assistente)\\s+", "").trim();
+    }
+
+    private boolean startsWithAssistantName(String text) {
+        return text.matches("^jarb(?:as|s)?($|\\s+).*");
     }
 
     private String applyLearnedAliases(String text) {
