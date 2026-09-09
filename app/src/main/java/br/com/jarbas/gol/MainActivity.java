@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
+import android.speech.tts.Voice;
 import android.view.KeyEvent;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -167,9 +168,24 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     @Override public void onInit(int result) {
         if (result == TextToSpeech.SUCCESS) {
-            tts.setLanguage(new Locale("pt", "BR"));
-            tts.setSpeechRate(0.95f);
+            Locale portugueseBrazil = new Locale("pt", "BR");
+            tts.setLanguage(portugueseBrazil);
+            tts.setVoice(findMalePortugueseVoice(portugueseBrazil));
+            tts.setPitch(0.88f);
+            tts.setSpeechRate(0.90f);
         }
+    }
+
+    private Voice findMalePortugueseVoice(Locale locale) {
+        Voice fallback = tts.getVoice();
+        for (Voice voice : tts.getVoices()) {
+            String name = voice.getName().toLowerCase(Locale.ROOT);
+            if (voice.getLocale().equals(locale) &&
+                    (name.contains("male") || name.contains("masculine") || name.contains("homem"))) {
+                return voice;
+            }
+        }
+        return fallback;
     }
 
     @Override protected void onDestroy() {
