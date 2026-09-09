@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.speech.tts.Voice;
 import android.view.KeyEvent;
@@ -28,6 +29,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private AudioManager audioManager;
     private boolean conversation = false;
     private boolean silentMode = false;
+    private SharedPreferences memory;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -39,6 +41,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         tts = new TextToSpeech(this, this);
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        memory = getSharedPreferences("jarb_memory", MODE_PRIVATE);
 
         if (android.os.Build.VERSION.SDK_INT >= 23 &&
             checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -56,7 +59,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         recognizer = SpeechRecognizer.createSpeechRecognizer(this);
         recognizer.setRecognitionListener(new RecognitionListener() {
-            public void onReadyForSpeech(Bundle p) { status.setText("JARBAS em espera silenciosa."); }
+            public void onReadyForSpeech(Bundle p) { status.setText("JARB em espera silenciosa."); }
             public void onBeginningOfSpeech() { status.setText("..."); }
             public void onRmsChanged(float r) {}
             public void onBufferReceived(byte[] b) {}
@@ -66,7 +69,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                     status.setText("Modo mãos-livres ativo.");
                     status.postDelayed(() -> listenAgain(), 500);
                 } else {
-                    status.setText("Toque em OUVIR JARBAS para ativar.");
+                    status.setText("Toque em OUVIR JARB para ativar.");
                 }
             }
             public void onResults(Bundle r) {
@@ -89,7 +92,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             conversation = false;
             silentMode = false;
             recognizer.cancel();
-            status.setText("JARBAS em espera.");
+            status.setText("JARB em espera.");
         });
     }
 
@@ -101,40 +104,52 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private void respond(String text) {
         String q = normalize(text);
 
-        if (!q.startsWith("jarbas")) {
-            status.setText("Modo mãos-livres ativo.");
+        if (!q.startsWith("jarb")) {
+            status.setText("JARB em espera silenciosa.");
             if (conversation) status.postDelayed(() -> listenAgain(), 300);
             return;
         }
 
-        q = q.replace("jarbas", "").trim();
+        q = q.replaceFirst("^jarb\\s*", "").trim();
 
         if (hasAny(q, "silencio", "fique em silencio", "fica em silencio", "pare de ouvir",
                 "parar de ouvir", "desligue o microfone", "desativar escuta")) {
             silentMode = true;
             conversation = false;
             recognizer.cancel();
-            status.setText("JARBAS em silêncio. Toque em OUVIR para reativar.");
+            status.setText("JARB em silêncio. Toque em OUVIR para reativar.");
             return;
         }
 
         if (q.isEmpty()) {
             silentMode = false;
             conversation = true;
-            status.setText("JARBAS ativo. Diga o comando.");
+            status.setText("JARB ativo. Diga o comando.");
             if (conversation) status.postDelayed(() -> listenAgain(), 300);
             return;
         }
 
         if (silentMode) {
-            status.setText("JARBAS em silêncio. Toque em OUVIR para reativar.");
+            status.setText("JARB em silêncio. Toque em OUVIR para reativar.");
             return;
         }
+
+        if (q.startsWith("aprenda que ") && q.contains(" significa ")) {
+            String[] lesson = q.substring("aprenda que ".length()).split(" significa ", 2);
+            if (lesson.length == 2 && !lesson[0].trim().isEmpty() && !lesson[1].trim().isEmpty()) {
+                memory.edit().putString("alias_" + lesson[0].trim(), lesson[1].trim()).apply();
+                status.setText("JARB aprendeu esse comando.");
+                conversation = false;
+                return;
+            }
+        }
+
+        q = applyLearnedAliases(q);
 
         String answer;
 
         if (q.contains("quem e voce") || q.contains("seu nome")) {
-            answer = "Eu sou JARBAS, o assistente do seu Gol 1999.";
+            answer = "Eu sou JARB, o assistente do seu Gol 1999.";
         } else if (q.contains("como esta") || q.contains("estado do carro") || q.equals("carro")) {
             answer = "O módulo de diagnóstico ainda está em modo de demonstração. A próxima etapa conecta os sensores reais do Gol.";
         } else if (q.contains("temperatura")) {
@@ -178,7 +193,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             answer = "Entendi, Carlos. Ainda estou aprendendo os comandos específicos do seu Gol.";
         }
 
-        status.setText("JARBAS: " + answer);
+        learnCommand(q);
+        status.setText("JARB: " + answer);
         if (!isQuietMediaCommand(q)) say(answer);
         if (conversation) status.postDelayed(() -> listenAgain(), 1200);
     }
@@ -205,9 +221,23 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         return false;
     }
 
+    private String applyLearnedAliases(String text) {
+        for (java.util.Map.Entry<String, ?> entry : memory.getAll().entrySet()) {
+            if (!entry.getKey().startsWith("alias_")) continue;
+            String alias = entry.getKey().substring("alias_".length());
+            if (text.contains(alias)) return text.replace(alias, String.valueOf(entry.getValue()));
+        }
+        return text;
+    }
+
+    private void learnCommand(String command) {
+        String key = "count_" + command;
+        memory.edit().putInt(key, memory.getInt(key, 0) + 1).apply();
+    }
+
     private void say(String text) {
-        status.setText("JARBAS: " + text);
-        if (tts != null) tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "JARBAS");
+        status.setText("JARB: " + text);
+        if (tts != null) tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "JARB");
     }
 
     private void changeVolume(int direction) {

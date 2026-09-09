@@ -1,4 +1,4 @@
-# JARBAS — pacote específico para a First Option MP5
+# JARB — pacote específico para a First Option MP5
 
 ## O que foi identificado nas fotos
 - Marca: First Option
@@ -8,7 +8,7 @@
 - Bluetooth: CAR-KIT
 
 ## O que este pacote faz
-Este pacote cria um aplicativo Android chamado JARBAS para usar o celular/Android como cérebro de voz, enquanto a First Option permanece como central de áudio Bluetooth.
+Este pacote cria um aplicativo Android chamado JARB para usar o celular/Android como cérebro de voz, enquanto a First Option permanece como central de áudio Bluetooth.
 
 O aplicativo:
 - fala em português brasileiro;
@@ -23,7 +23,7 @@ O aplicativo:
 A foto não demonstra que a First Option possui Android aberto ou capacidade de instalar APKs. Por isso NÃO incluí firmware da central e NÃO recomendo gravar firmware de terceiros nela.
 
 O uso previsto é:
-celular/Android com JARBAS -> Bluetooth -> CAR-KIT da First Option -> alto-falantes do Gol.
+celular/Android com JARB -> Bluetooth -> CAR-KIT da First Option -> alto-falantes do Gol.
 
 Se a sua central possuir espelhamento compatível, a tela do telefone poderá eventualmente ser exibida nela; isso precisa ser testado no aparelho específico.
 
@@ -37,28 +37,39 @@ Permissões:
 Depois:
 1. Emparelhe o telefone com CAR-KIT.
 2. Selecione a First Option como saída de áudio Bluetooth.
-3. Abra JARBAS.
-4. Toque em OUVIR JARBAS.
+3. Abra JARB.
+4. Toque em OUVIR JARB.
 5. Fale normalmente.
 
 Comandos de mídia disponíveis:
-- diga "JARBAS" antes de cada comando; frases sem essa palavra são ignoradas;
+- diga "JARB" antes de cada comando; frases sem essa palavra são ignoradas;
 - "aumentar o volume", "diminuir o volume" ou "silenciar";
 - "tocar música", "pausar a música" ou "continuar a música";
 - "próxima música" ou "música anterior";
 - "abrir Bluetooth" ou "conectar na central" para abrir as configurações e
 	conectar manualmente a CAR-KIT.
 
-O botão OUVIR JARBAS ativa o modo mãos-livres experimental. Diga "JARBAS" e
+O botão OUVIR JARB ativa o modo mãos-livres experimental. Diga "JARB" e
 o comando na mesma frase; frases sem a palavra de ativação são ignoradas.
 PARAR encerra a escuta. Alguns telefones ainda podem emitir um sinal curto ao
 iniciar uma captura; esse som é gerado pelo Android e a central pode pausar o
 áudio enquanto o reconhecimento usa o microfone.
 
-Para silenciar por voz, diga "JARBAS, silêncio". O app cancela o microfone e
+Para silenciar por voz, diga "JARB, silêncio". O app cancela o microfone e
 para de disputar o áudio com a música. Para reativar, toque novamente em OUVIR
-JARBAS; um microfone desligado não consegue escutar a palavra de ativação. O
+JARB; um microfone desligado não consegue escutar a palavra de ativação. O
 botão PARAR também desliga completamente o microfone.
+
+Memória local:
+- "JARB aprenda que baixa o som significa diminuir volume" cria um alias
+	salvo no telefone;
+- os comandos usados são contados localmente para orientar melhorias futuras;
+- nenhum áudio ou histórico é enviado automaticamente para a internet.
+
+A permissão de internet está disponível para uma futura integração com um
+servidor de IA. Para aprendizado online real será necessário configurar um
+servidor e uma chave de API fora do APK; chaves não devem ser colocadas no
+código do aplicativo.
 
 ## Próxima etapa
 Para ligar sensores reais do Gol, use um microcontrolador separado e protegido. O aplicativo não deve comandar direção, freios ou acelerador.

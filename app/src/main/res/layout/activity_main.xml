@@ -8,7 +8,7 @@
 
     <TextView
         android:id="@+id/title"
-        android:text="JARBAS"
+        android:text="JARB"
         android:textSize="42sp"
         android:textStyle="bold"
         android:textColor="#FFFFFF"
@@ -28,7 +28,7 @@
 
     <TextView
         android:id="@+id/status"
-        android:text="JARBAS em espera"
+        android:text="JARB em espera"
         android:textSize="26sp"
         android:textStyle="bold"
         android:textColor="#FFFFFF"
@@ -44,7 +44,7 @@
 
         <Button
             android:id="@+id/listen"
-            android:text="OUVIR JARBAS"
+            android:text="OUVIR JARB"
             android:textSize="18sp"
             android:layout_width="0dp"
             android:layout_weight="1"
