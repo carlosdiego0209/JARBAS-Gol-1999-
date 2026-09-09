@@ -63,8 +63,16 @@ botão PARAR também desliga completamente o microfone.
 Memória local:
 - "JARB aprenda que baixa o som significa diminuir volume" cria um alias
 	salvo no telefone;
+- "JARB me chame de Carlos" salva como você prefere ser chamado;
 - os comandos usados são contados localmente para orientar melhorias futuras;
 - nenhum áudio ou histórico é enviado automaticamente para a internet.
+
+Internet e conversa:
+- "JARB pesquise novidades sobre o Gol 1999" abre uma busca no navegador;
+- "JARB bom dia", "JARB ajuda" e "JARB o que você sabe fazer" têm respostas
+	próprias;
+- o app não é um modelo de IA online: para respostas generativas seria
+	necessário um servidor seguro com uma chave protegida fora do APK.
 
 A permissão de internet está disponível para uma futura integração com um
 servidor de IA. Para aprendizado online real será necessário configurar um

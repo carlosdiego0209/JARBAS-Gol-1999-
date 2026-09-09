@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.media.AudioManager;
 import android.speech.tts.Voice;
 import android.view.KeyEvent;
@@ -149,8 +150,27 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         String answer;
 
-        if (q.contains("quem e voce") || q.contains("seu nome")) {
+        if (q.startsWith("me chame de ") || q.startsWith("me chama de ")) {
+            String preferredName = q.substring(q.indexOf(" de ") + 4).trim();
+            memory.edit().putString("preferred_name", preferredName).apply();
+            answer = "Combinado. Vou chamar você de " + preferredName + ".";
+        } else if (q.contains("quem e voce") || q.contains("seu nome")) {
             answer = "Eu sou JARB, o assistente do seu Gol 1999.";
+        } else if (hasAny(q, "bom dia", "boa tarde", "boa noite", "ola", "oi")) {
+            answer = greetingForTime();
+        } else if (hasAny(q, "o que voce sabe fazer", "ajuda", "comandos", "o que voce consegue")) {
+            answer = "Posso conversar, pesquisar na internet, controlar volume e música, abrir o Bluetooth e guardar preferências que você me ensinar.";
+        } else if (hasAny(q, "pesquise", "pesquisar", "procure na internet", "buscar na internet", "veja na internet", "noticias sobre")) {
+            String search = q.replaceFirst("^(pesquise|pesquisar|procure na internet|buscar na internet|veja na internet|noticias sobre)\\s*", "").trim();
+            openWebSearch(search);
+            answer = "Abrindo uma pesquisa na internet.";
+        } else if (q.startsWith("aprenda que ") && q.contains(" significa ")) {
+            String[] lesson = q.substring("aprenda que ".length()).split(" significa ", 2);
+            if (lesson.length == 2 && !lesson[0].trim().isEmpty() && !lesson[1].trim().isEmpty()) {
+                memory.edit().putString("alias_" + lesson[0].trim(), lesson[1].trim()).apply();
+                answerAfterCommand("Aprendi essa preferência.");
+                return;
+            }
         } else if (q.contains("como esta") || q.contains("estado do carro") || q.equals("carro")) {
             answer = "O módulo de diagnóstico ainda está em modo de demonstração. A próxima etapa conecta os sensores reais do Gol.";
         } else if (q.contains("temperatura")) {
@@ -191,7 +211,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         } else if (hasAny(q, "obrigado", "obrigada")) {
             answer = "Sempre às ordens, Carlos.";
         } else {
-            answer = "Entendi, Carlos. Ainda estou aprendendo os comandos específicos do seu Gol.";
+            answer = "Entendi. Posso pesquisar isso na internet se você disser: JARB, pesquise " + q + ".";
         }
 
         learnCommand(q);
@@ -264,6 +284,20 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     private void openBluetoothSettings() {
         startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
+    }
+
+    private void openWebSearch(String query) {
+        String safeQuery = query.isEmpty() ? "Gol 1999" : query;
+        startActivity(new Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://www.google.com/search?q=" + Uri.encode(safeQuery))));
+    }
+
+    private String greetingForTime() {
+        java.util.Calendar now = java.util.Calendar.getInstance();
+        int hour = now.get(java.util.Calendar.HOUR_OF_DAY);
+        String greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+        String preferredName = memory.getString("preferred_name", "Carlos");
+        return greeting + ", " + preferredName + ". Como posso ajudar?";
     }
 
     @Override public void onInit(int result) {
