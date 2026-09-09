@@ -59,7 +59,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         recognizer = SpeechRecognizer.createSpeechRecognizer(this);
         recognizer.setRecognitionListener(new RecognitionListener() {
-            public void onReadyForSpeech(Bundle p) { status.setText("JARB em espera silenciosa."); }
+            public void onReadyForSpeech(Bundle p) { status.setText("JARB ouvindo."); }
             public void onBeginningOfSpeech() { status.setText("..."); }
             public void onRmsChanged(float r) {}
             public void onBufferReceived(byte[] b) {}
@@ -105,12 +105,14 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         String q = normalize(text);
 
         if (!q.startsWith("jarb")) {
-            status.setText("JARB em espera silenciosa.");
+            status.setText("JARB aguardando o nome.");
             if (conversation) status.postDelayed(() -> listenAgain(), 300);
             return;
         }
 
-        q = q.replaceFirst("^jarb\\s*", "").trim();
+        q = q.startsWith("jarbs")
+                ? q.replaceFirst("^jarbs\\s*", "").trim()
+                : q.replaceFirst("^jarb\\s*", "").trim();
 
         if (hasAny(q, "silencio", "fique em silencio", "fica em silencio", "pare de ouvir",
                 "parar de ouvir", "desligue o microfone", "desativar escuta")) {
@@ -138,8 +140,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             String[] lesson = q.substring("aprenda que ".length()).split(" significa ", 2);
             if (lesson.length == 2 && !lesson[0].trim().isEmpty() && !lesson[1].trim().isEmpty()) {
                 memory.edit().putString("alias_" + lesson[0].trim(), lesson[1].trim()).apply();
-                status.setText("JARB aprendeu esse comando.");
-                conversation = false;
+                answerAfterCommand("JARB aprendeu esse comando.");
                 return;
             }
         }
@@ -195,8 +196,14 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         learnCommand(q);
         status.setText("JARB: " + answer);
-        if (!isQuietMediaCommand(q)) say(answer);
+        if (!silentMode) say(answer);
         if (conversation) status.postDelayed(() -> listenAgain(), 1200);
+    }
+
+    private void answerAfterCommand(String answer) {
+        status.setText("JARB: " + answer);
+        if (!silentMode) say(answer);
+        conversation = false;
     }
 
     private boolean isQuietMediaCommand(String text) {
