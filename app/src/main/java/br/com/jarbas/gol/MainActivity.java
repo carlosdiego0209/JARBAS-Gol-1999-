@@ -7,6 +7,8 @@ import android.content.pm.PackageManager;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.media.AudioManager;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
 import android.speech.tts.Voice;
 import android.view.KeyEvent;
 import android.os.Bundle;
@@ -28,6 +30,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private TextToSpeech tts;
     private TextView status;
     private AudioManager audioManager;
+    private AudioFocusRequest speechFocusRequest;
     private boolean conversation = false;
     private boolean silentMode = false;
     private SharedPreferences memory;
@@ -42,6 +45,15 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         tts = new TextToSpeech(this, this);
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        speechFocusRequest = new AudioFocusRequest.Builder(
+            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+            .setAudioAttributes(new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .build())
+            .setAcceptsDelayedFocusGain(false)
+            .setOnAudioFocusChangeListener(focus -> {})
+            .build();
         memory = getSharedPreferences("jarb_memory", MODE_PRIVATE);
 
         if (android.os.Build.VERSION.SDK_INT >= 23 &&
@@ -66,6 +78,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             public void onBufferReceived(byte[] b) {}
             public void onEndOfSpeech() { status.setText("Processando..."); }
             public void onError(int e) {
+                releaseSpeechFocus();
                 if (conversation) {
                     status.setText("Modo mãos-livres ativo.");
                     status.postDelayed(() -> listenAgain(), 500);
@@ -74,6 +87,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 }
             }
             public void onResults(Bundle r) {
+                releaseSpeechFocus();
                 ArrayList<String> a = r.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                 String heard = (a != null && !a.isEmpty()) ? a.get(0) : "";
                 respond(heard);
@@ -93,13 +107,21 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             conversation = false;
             silentMode = false;
             recognizer.cancel();
+            releaseSpeechFocus();
             status.setText("JARB em espera.");
         });
     }
 
     private void listenAgain() {
         if (!conversation) return;
+        audioManager.requestAudioFocus(speechFocusRequest);
         recognizer.startListening(speechIntent);
+    }
+
+    private void releaseSpeechFocus() {
+        if (audioManager != null && speechFocusRequest != null) {
+            audioManager.abandonAudioFocusRequest(speechFocusRequest);
+        }
     }
 
     private void respond(String text) {

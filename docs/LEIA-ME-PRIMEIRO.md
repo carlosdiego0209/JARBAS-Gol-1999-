@@ -81,6 +81,11 @@ O acesso à internet não é ilimitado: depende da conexão, do navegador e dos
 serviços externos. O JARB não envia áudio ou aprende sozinho com a internet;
 ele guarda aliases e preferências localmente e abre buscas quando solicitado.
 
+O reconhecimento pede foco de áudio transitório com redução de volume (ducking)
+em vez de foco exclusivo, e libera esse foco ao terminar cada captura. Isso
+reduz a chance de a música parar, embora algumas centrais ou serviços Android
+possam impor seu próprio comportamento.
+
 A permissão de internet está disponível para uma futura integração com um
 servidor de IA. Para aprendizado online real será necessário configurar um
 servidor e uma chave de API fora do APK; chaves não devem ser colocadas no
