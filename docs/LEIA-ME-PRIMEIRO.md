@@ -49,5 +49,10 @@ Comandos de mídia disponíveis:
 - "abrir Bluetooth" ou "conectar na central" para abrir as configurações e
 	conectar manualmente a CAR-KIT.
 
+Ao tocar em OUVIR JARBAS, o aplicativo entra em espera silenciosa e não fala
+até receber um comando iniciado por "JARBAS". Alguns telefones ainda podem
+emitir um sinal curto do próprio serviço de reconhecimento de voz; esse som é
+gerado pelo Android e não pode ser removido completamente pelo aplicativo.
+
 ## Próxima etapa
 Para ligar sensores reais do Gol, use um microcontrolador separado e protegido. O aplicativo não deve comandar direção, freios ou acelerador.

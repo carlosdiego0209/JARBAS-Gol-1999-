@@ -49,22 +49,23 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         speechIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR");
         speechIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
+        speechIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
+        speechIntent.putExtra("android.speech.extra.BEEP_SOUND", false);
 
         recognizer = SpeechRecognizer.createSpeechRecognizer(this);
         recognizer.setRecognitionListener(new RecognitionListener() {
-            public void onReadyForSpeech(Bundle p) { status.setText("JARBAS está ouvindo..."); }
-            public void onBeginningOfSpeech() { status.setText("Estou ouvindo, Carlos."); }
+            public void onReadyForSpeech(Bundle p) { status.setText("JARBAS em espera silenciosa."); }
+            public void onBeginningOfSpeech() { status.setText("..."); }
             public void onRmsChanged(float r) {}
             public void onBufferReceived(byte[] b) {}
             public void onEndOfSpeech() { status.setText("Processando..."); }
             public void onError(int e) {
-                status.setText(conversation ? "Não entendi. Tentando novamente..." : "Toque em OUVIR para tentar novamente.");
-                if (conversation) status.postDelayed(() -> listenAgain(), 900);
+                status.setText(conversation ? "JARBAS em espera silenciosa." : "Toque em OUVIR para ativar.");
+                if (conversation) status.postDelayed(() -> listenAgain(), 350);
             }
             public void onResults(Bundle r) {
                 ArrayList<String> a = r.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                 String heard = (a != null && !a.isEmpty()) ? a.get(0) : "";
-                status.setText("Carlos: " + heard);
                 respond(heard);
             }
             public void onPartialResults(Bundle r) {}
@@ -73,15 +74,14 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         listen.setOnClickListener(v -> {
             conversation = true;
-            say("Sim, Carlos. JARBAS está pronto.");
-            v.postDelayed(() -> listenAgain(), 1500);
+            status.setText("JARBAS em espera silenciosa.");
+            listenAgain();
         });
 
         stop.setOnClickListener(v -> {
             conversation = false;
             recognizer.cancel();
             status.setText("JARBAS em espera.");
-            say("Até logo, Carlos.");
         });
     }
 
@@ -93,13 +93,18 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private void respond(String text) {
         String q = normalize(text);
 
-        if (!q.contains("jarbas")) {
-            status.setText("Diga JARBAS para me chamar.");
+        if (!q.startsWith("jarbas")) {
+            status.setText("JARBAS em espera silenciosa.");
             if (conversation) status.postDelayed(() -> listenAgain(), 500);
             return;
         }
 
         q = q.replace("jarbas", "").trim();
+        if (q.isEmpty()) {
+            status.setText("JARBAS em espera silenciosa.");
+            if (conversation) status.postDelayed(() -> listenAgain(), 350);
+            return;
+        }
         String answer;
 
         if (q.contains("quem e voce") || q.contains("seu nome")) {
@@ -147,8 +152,15 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             answer = "Entendi, Carlos. Ainda estou aprendendo os comandos específicos do seu Gol.";
         }
 
-        say(answer);
+        status.setText("JARBAS: " + answer);
+        if (!isQuietMediaCommand(q)) say(answer);
         if (conversation) status.postDelayed(() -> listenAgain(), Math.max(1800, answer.length() * 55));
+    }
+
+    private boolean isQuietMediaCommand(String text) {
+        return hasAny(text, "volume", "som", "musica", "faixa", "tocar", "play",
+                "pausar", "pausa", "continuar", "retomar", "proxima", "anterior",
+                "bluetooth", "conectar");
     }
 
     private String normalize(String text) {
