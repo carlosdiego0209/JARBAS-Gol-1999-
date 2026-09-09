@@ -164,13 +164,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             String search = q.replaceFirst("^(pesquise|pesquisar|procure na internet|buscar na internet|veja na internet|noticias sobre)\\s*", "").trim();
             openWebSearch(search);
             answer = "Abrindo uma pesquisa na internet.";
-        } else if (q.startsWith("aprenda que ") && q.contains(" significa ")) {
-            String[] lesson = q.substring("aprenda que ".length()).split(" significa ", 2);
-            if (lesson.length == 2 && !lesson[0].trim().isEmpty() && !lesson[1].trim().isEmpty()) {
-                memory.edit().putString("alias_" + lesson[0].trim(), lesson[1].trim()).apply();
-                answerAfterCommand("Aprendi essa preferência.");
-                return;
-            }
         } else if (q.contains("como esta") || q.contains("estado do carro") || q.equals("carro")) {
             answer = "O módulo de diagnóstico ainda está em modo de demonstração. A próxima etapa conecta os sensores reais do Gol.";
         } else if (q.contains("temperatura")) {
