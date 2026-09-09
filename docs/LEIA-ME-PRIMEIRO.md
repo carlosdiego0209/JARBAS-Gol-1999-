@@ -86,6 +86,15 @@ restaura o valor original ao terminar. Ele não solicita foco de áudio ao
 Android, reduzindo a chance de a central pausar a música. Algumas centrais ou
 serviços Android ainda podem impor seu próprio comportamento.
 
+Teste AVRCP:
+1. Emparelhe `CAR-KIT` e ative **Áudio de mídia** no dispositivo Bluetooth.
+2. Inicie uma música no telefone.
+3. Diga "JARB, pausar música", "JARB, continuar música", "JARB, próxima
+	música" ou "JARB, música anterior".
+4. A resposta "Comando AVRCP enviado" confirma que o Android encaminhou o
+	evento. Se aparecer que a CAR-KIT não está conectada como áudio de mídia,
+	ela não está usando o perfil necessário para esses controles.
+
 A permissão de internet está disponível para uma futura integração com um
 servidor de IA. Para aprendizado online real será necessário configurar um
 servidor e uma chave de API fora do APK; chaves não devem ser colocadas no

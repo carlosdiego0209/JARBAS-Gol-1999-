@@ -200,19 +200,19 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             answer = "Som silenciado.";
         } else if (hasAny(q, "pausar musica", "pausa musica", "pare a musica", "parar musica", "pause")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE);
-            answer = "Música pausada.";
+            answer = mediaCommandAnswer("Música pausada.");
         } else if (hasAny(q, "continuar musica", "continua musica", "retomar musica", "retome musica")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
-            answer = "Continuando a música.";
+            answer = mediaCommandAnswer("Continuando a música.");
         } else if (hasAny(q, "proxima musica", "proxima faixa", "proxima", "seguinte", "trocar musica", "mudar musica", "troca musica", "muda musica")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_NEXT);
-            answer = "Avançando para a próxima música.";
+            answer = mediaCommandAnswer("Avançando para a próxima música.");
         } else if (hasAny(q, "musica anterior", "faixa anterior", "voltar musica", "anterior")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PREVIOUS);
-            answer = "Voltando para a música anterior.";
+            answer = mediaCommandAnswer("Voltando para a música anterior.");
         } else if (hasAny(q, "tocar musica", "tocar", "iniciar musica", "inicia musica", "dar play", "play")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
-            answer = "Iniciando a música.";
+            answer = mediaCommandAnswer("Iniciando a música.");
         } else if (hasAny(q, "bluetooth", "conectar na central", "conectar o carro")) {
             openBluetoothSettings();
             answer = "Abrindo as configurações Bluetooth para você conectar a CAR-KIT.";
@@ -296,6 +296,13 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 KeyEvent.ACTION_DOWN, keyCode, 0));
         audioManager.dispatchMediaKeyEvent(new KeyEvent(eventTime, eventTime,
                 KeyEvent.ACTION_UP, keyCode, 0));
+    }
+
+    private String mediaCommandAnswer(String successMessage) {
+        if (android.os.Build.VERSION.SDK_INT >= 23 && !audioManager.isBluetoothA2dpOn()) {
+            return "Enviei o comando ao Android, mas a CAR-KIT não está conectada como áudio de mídia.";
+        }
+        return successMessage + " Comando AVRCP enviado.";
     }
 
     private void openBluetoothSettings() {
