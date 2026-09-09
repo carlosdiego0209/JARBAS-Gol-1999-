@@ -129,8 +129,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         q = q.replaceFirst("^jarb(?:as|s)?\\s*", "").trim();
 
-        if (hasAny(q, "silencio", "fique em silencio", "fica em silencio", "pare de ouvir",
-                "parar de ouvir", "desligue o microfone", "desativar escuta")) {
+        if (hasAny(q, "silencio", "fique em silencio", "fica em silencio", "modo silencio", "pare de ouvir",
+            "parar de ouvir", "desligue o microfone", "desativar escuta")) {
             silentMode = true;
             conversation = false;
             recognizer.cancel();
@@ -151,8 +151,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             return;
         }
 
-        if (q.startsWith("aprenda que ") && q.contains(" significa ")) {
-            String[] lesson = q.substring("aprenda que ".length()).split(" significa ", 2);
+        if ((q.startsWith("aprenda que ") || q.startsWith("aprenda ") || q.startsWith("me ensine que ")) && q.contains(" significa ")) {
+            String lessonText = q.replaceFirst("^(aprenda que|aprenda|me ensine que)\\s+", "");
+            String[] lesson = lessonText.split(" significa ", 2);
             if (lesson.length == 2 && !lesson[0].trim().isEmpty() && !lesson[1].trim().isEmpty()) {
                 memory.edit().putString("alias_" + lesson[0].trim(), lesson[1].trim()).apply();
                 answerAfterCommand("JARB aprendeu esse comando.");
@@ -168,52 +169,52 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             String preferredName = q.substring(q.indexOf(" de ") + 4).trim();
             memory.edit().putString("preferred_name", preferredName).apply();
             answer = "Combinado. Vou chamar você de " + preferredName + ".";
-        } else if (q.contains("quem e voce") || q.contains("seu nome")) {
+        } else if (hasAny(q, "quem e voce", "quem e o jarb", "seu nome", "como voce se chama")) {
             answer = "Eu sou JARB, o assistente do seu Gol 1999.";
         } else if (hasAny(q, "bom dia", "boa tarde", "boa noite", "ola", "oi")) {
             answer = greetingForTime();
-        } else if (hasAny(q, "o que voce sabe fazer", "ajuda", "comandos", "o que voce consegue")) {
+        } else if (hasAny(q, "o que voce sabe fazer", "ajuda", "comandos", "o que voce consegue", "me ajude")) {
             answer = "Posso conversar, pesquisar na internet, controlar volume e música, abrir o Bluetooth e guardar preferências que você me ensinar.";
-        } else if (hasAny(q, "pesquise", "pesquisar", "procure", "buscar", "veja na internet", "noticias sobre", "o que e", "quem foi", "como funciona", "qual e")) {
+        } else if (hasAny(q, "aumentar volume", "aumentar o volume", "aumenta volume", "aumenta o volume", "aumente volume", "aumente o volume", "subir volume", "subir o volume", "sobe volume", "sobe o volume", "mais alto", "aumentar som", "aumentar o som", "aumenta o som", "aumente o som", "volume pra cima")) {
+            changeVolume(AudioManager.ADJUST_RAISE);
+            answer = "Aumentando o volume.";
+        } else if (hasAny(q, "diminuir volume", "diminuir o volume", "diminui volume", "diminui o volume", "diminua volume", "diminua o volume", "abaixar volume", "abaixar o volume", "abaixa volume", "abaixa o volume", "baixar volume", "baixar o volume", "baixa volume", "baixa o volume", "mais baixo", "diminuir som", "diminuir o som", "abaixar som", "abaixar o som", "abaixa o som", "volume pra baixo")) {
+            changeVolume(AudioManager.ADJUST_LOWER);
+            answer = "Diminuindo o volume.";
+        } else if (hasAny(q, "volume maximo", "som maximo", "no maximo")) {
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,
+                    audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
+            answer = "Volume máximo selecionado.";
+        } else if (hasAny(q, "volume minimo", "som minimo", "silenciar", "tirar o som", "sem som", "mudo")) {
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0);
+            answer = "Som silenciado.";
+        } else if (hasAny(q, "pausar musica", "pausar a musica", "pausa musica", "pause a musica", "pare a musica", "parar musica", "pause")) {
+            sendMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE);
+            answer = "Música pausada.";
+        } else if (hasAny(q, "continuar musica", "continuar a musica", "continua musica", "continua a musica", "retomar musica", "retome musica", "da play")) {
+            sendMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
+            answer = "Continuando a música.";
+        } else if (hasAny(q, "proxima musica", "proxima a musica", "proxima faixa", "proxima", "seguinte", "trocar musica", "mudar musica", "troca musica", "muda musica", "pular musica")) {
+            sendMediaKey(KeyEvent.KEYCODE_MEDIA_NEXT);
+            answer = "Avançando para a próxima música.";
+        } else if (hasAny(q, "musica anterior", "faixa anterior", "voltar musica", "voltar faixa", "anterior")) {
+            sendMediaKey(KeyEvent.KEYCODE_MEDIA_PREVIOUS);
+            answer = "Voltando para a música anterior.";
+        } else if (hasAny(q, "tocar musica", "tocar a musica", "tocar", "iniciar musica", "inicia musica", "dar play", "da play", "play", "reproduzir musica")) {
+            sendMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
+            answer = "Iniciando a música.";
+        } else if (hasAny(q, "pesquise", "pesquisar", "procure na internet", "buscar na internet", "veja na internet", "noticias sobre")) {
             String search = q.replaceFirst("^(pesquise|pesquisar|procure(?: na internet)?|buscar(?: na internet)?|veja na internet|noticias sobre|o que e|quem foi|como funciona|qual e)\\s*", "").trim();
             if (search.isEmpty()) search = q;
             openWebSearch(search);
             answer = "Abrindo uma pesquisa na internet.";
-        } else if (q.contains("como esta") || q.contains("estado do carro") || q.equals("carro")) {
+        } else if (hasAny(q, "como esta", "estado do carro", "situacao do carro", "status do carro", "carro")) {
             answer = "O módulo de diagnóstico ainda está em modo de demonstração. A próxima etapa conecta os sensores reais do Gol.";
         } else if (q.contains("temperatura")) {
             answer = "A leitura real da temperatura será fornecida pelo controlador veicular. Neste pacote ela ainda está em modo de demonstração.";
         } else if (q.contains("bateria")) {
             answer = "A tensão da bateria será lida pelo módulo veicular. O aplicativo já está preparado para receber essa informação.";
-        } else if (hasAny(q, "aumentar volume", "aumenta volume", "aumente volume", "subir volume", "sobe volume", "mais alto", "aumentar som", "aumente o som")) {
-            changeVolume(AudioManager.ADJUST_RAISE);
-            answer = "Aumentando o volume.";
-        } else if (hasAny(q, "diminuir volume", "diminui volume", "diminua volume", "abaixar volume", "abaixa volume", "baixar volume", "baixa volume", "mais baixo", "diminuir som", "abaixar som")) {
-            changeVolume(AudioManager.ADJUST_LOWER);
-            answer = "Diminuindo o volume.";
-        } else if (hasAny(q, "volume maximo", "som maximo")) {
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,
-                    audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
-            answer = "Volume máximo selecionado.";
-        } else if (hasAny(q, "volume minimo", "som minimo", "silenciar", "tirar o som", "mudo")) {
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0);
-            answer = "Som silenciado.";
-        } else if (hasAny(q, "pausar musica", "pausa musica", "pare a musica", "parar musica", "pause")) {
-            sendMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE);
-            answer = mediaCommandAnswer("Música pausada.");
-        } else if (hasAny(q, "continuar musica", "continua musica", "retomar musica", "retome musica")) {
-            sendMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
-            answer = mediaCommandAnswer("Continuando a música.");
-        } else if (hasAny(q, "proxima musica", "proxima faixa", "proxima", "seguinte", "trocar musica", "mudar musica", "troca musica", "muda musica")) {
-            sendMediaKey(KeyEvent.KEYCODE_MEDIA_NEXT);
-            answer = mediaCommandAnswer("Avançando para a próxima música.");
-        } else if (hasAny(q, "musica anterior", "faixa anterior", "voltar musica", "anterior")) {
-            sendMediaKey(KeyEvent.KEYCODE_MEDIA_PREVIOUS);
-            answer = mediaCommandAnswer("Voltando para a música anterior.");
-        } else if (hasAny(q, "tocar musica", "tocar", "iniciar musica", "inicia musica", "dar play", "play")) {
-            sendMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
-            answer = mediaCommandAnswer("Iniciando a música.");
-        } else if (hasAny(q, "bluetooth", "conectar na central", "conectar o carro")) {
+        } else if (hasAny(q, "bluetooth", "conectar na central", "conectar o carro", "conectar car kit", "abrir bluetooth")) {
             openBluetoothSettings();
             answer = "Abrindo as configurações Bluetooth para você conectar a CAR-KIT.";
         } else if (hasAny(q, "obrigado", "obrigada")) {
@@ -245,6 +246,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
                 .toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9 ]", " ")
+                .replaceAll("\\bpor favor\\b", " ")
                 .replaceAll("\\s+", " ")
                 .trim();
     }
@@ -296,13 +298,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 KeyEvent.ACTION_DOWN, keyCode, 0));
         audioManager.dispatchMediaKeyEvent(new KeyEvent(eventTime, eventTime,
                 KeyEvent.ACTION_UP, keyCode, 0));
-    }
-
-    private String mediaCommandAnswer(String successMessage) {
-        if (android.os.Build.VERSION.SDK_INT >= 23 && !audioManager.isBluetoothA2dpOn()) {
-            return "Enviei o comando ao Android, mas a CAR-KIT não está conectada como áudio de mídia.";
-        }
-        return successMessage + " Comando AVRCP enviado.";
     }
 
     private void openBluetoothSettings() {
