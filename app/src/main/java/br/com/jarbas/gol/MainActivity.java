@@ -110,6 +110,15 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             if (conversation) status.postDelayed(() -> listenAgain(), 300);
             return;
         }
+
+        if (hasAny(q, "fique em silencio", "fica em silencio", "pare de ouvir",
+                "parar de ouvir", "desligue o microfone", "desativar escuta")) {
+            conversation = false;
+            recognizer.cancel();
+            status.setText("JARBAS em silêncio.");
+            return;
+        }
+
         String answer;
 
         if (q.contains("quem e voce") || q.contains("seu nome")) {
