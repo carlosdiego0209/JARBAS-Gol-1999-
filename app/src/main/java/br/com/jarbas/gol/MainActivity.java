@@ -79,6 +79,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         });
 
         listen.setOnClickListener(v -> {
+            silentMode = false;
             conversation = true;
             status.setText("Modo mãos-livres ativo.");
             listenAgain();
@@ -111,9 +112,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         if (hasAny(q, "silencio", "fique em silencio", "fica em silencio", "pare de ouvir",
                 "parar de ouvir", "desligue o microfone", "desativar escuta")) {
             silentMode = true;
-            conversation = true;
-            status.setText("JARBAS em silêncio. Diga JARBAS para reativar.");
-            listenAgain();
+            conversation = false;
+            recognizer.cancel();
+            status.setText("JARBAS em silêncio. Toque em OUVIR para reativar.");
             return;
         }
 
@@ -126,8 +127,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         }
 
         if (silentMode) {
-            status.setText("JARBAS em silêncio. Diga apenas JARBAS para reativar.");
-            if (conversation) status.postDelayed(() -> listenAgain(), 300);
+            status.setText("JARBAS em silêncio. Toque em OUVIR para reativar.");
             return;
         }
 

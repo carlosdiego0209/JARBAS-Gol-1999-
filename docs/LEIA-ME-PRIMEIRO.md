@@ -55,10 +55,10 @@ PARAR encerra a escuta. Alguns telefones ainda podem emitir um sinal curto ao
 iniciar uma captura; esse som é gerado pelo Android e a central pode pausar o
 áudio enquanto o reconhecimento usa o microfone.
 
-Para silenciar por voz, diga "JARBAS, silêncio". O app entra em espera e não
-executa comandos. Para reativar sem tocar no botão, diga apenas "JARBAS" e,
-depois que aparecer "JARBAS ativo", diga o comando normalmente. O botão PARAR
-continua desligando completamente o microfone.
+Para silenciar por voz, diga "JARBAS, silêncio". O app cancela o microfone e
+para de disputar o áudio com a música. Para reativar, toque novamente em OUVIR
+JARBAS; um microfone desligado não consegue escutar a palavra de ativação. O
+botão PARAR também desliga completamente o microfone.
 
 ## Próxima etapa
 Para ligar sensores reais do Gol, use um microcontrolador separado e protegido. O aplicativo não deve comandar direção, freios ou acelerador.
