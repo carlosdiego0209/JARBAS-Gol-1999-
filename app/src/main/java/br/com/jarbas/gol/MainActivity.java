@@ -16,6 +16,7 @@ import android.speech.tts.TextToSpeech;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -90,49 +91,57 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     }
 
     private void respond(String text) {
-        String q = text.toLowerCase(Locale.ROOT);
+        String q = normalize(text);
+
+        if (!q.contains("jarbas")) {
+            status.setText("Diga JARBAS para me chamar.");
+            if (conversation) status.postDelayed(() -> listenAgain(), 500);
+            return;
+        }
+
+        q = q.replace("jarbas", "").trim();
         String answer;
 
-        if (q.contains("quem é você") || q.contains("seu nome")) {
+        if (q.contains("quem e voce") || q.contains("seu nome")) {
             answer = "Eu sou JARBAS, o assistente do seu Gol 1999.";
-        } else if (q.contains("como está") || q.contains("estado do carro") || q.contains("carro")) {
+        } else if (q.contains("como esta") || q.contains("estado do carro") || q.equals("carro")) {
             answer = "O módulo de diagnóstico ainda está em modo de demonstração. A próxima etapa conecta os sensores reais do Gol.";
         } else if (q.contains("temperatura")) {
             answer = "A leitura real da temperatura será fornecida pelo controlador veicular. Neste pacote ela ainda está em modo de demonstração.";
         } else if (q.contains("bateria")) {
             answer = "A tensão da bateria será lida pelo módulo veicular. O aplicativo já está preparado para receber essa informação.";
-        } else if (q.contains("aumenta o volume") || q.contains("aumentar o volume") || q.contains("mais alto")) {
+        } else if (hasAny(q, "aumentar volume", "aumenta volume", "aumente volume", "subir volume", "sobe volume", "mais alto", "aumentar som", "aumente o som")) {
             changeVolume(AudioManager.ADJUST_RAISE);
             answer = "Aumentando o volume.";
-        } else if (q.contains("diminui o volume") || q.contains("diminuir o volume") || q.contains("mais baixo")) {
+        } else if (hasAny(q, "diminuir volume", "diminui volume", "diminua volume", "abaixar volume", "abaixa volume", "baixar volume", "baixa volume", "mais baixo", "diminuir som", "abaixar som")) {
             changeVolume(AudioManager.ADJUST_LOWER);
             answer = "Diminuindo o volume.";
-        } else if (q.contains("volume máximo") || q.contains("volume maximo")) {
+        } else if (hasAny(q, "volume maximo", "som maximo")) {
             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,
                     audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
             answer = "Volume máximo selecionado.";
-        } else if (q.contains("volume mínimo") || q.contains("volume minimo") || q.contains("silenciar")) {
+        } else if (hasAny(q, "volume minimo", "som minimo", "silenciar", "tirar o som", "mudo")) {
             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0);
             answer = "Som silenciado.";
-        } else if (q.contains("pausa a música") || q.contains("pausar a música") || q.contains("pausa a musica") || q.contains("pausar a musica")) {
+        } else if (hasAny(q, "pausar musica", "pausa musica", "pare a musica", "parar musica", "pause")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE);
             answer = "Música pausada.";
-        } else if (q.contains("continua a música") || q.contains("continuar a música") || q.contains("continua a musica") || q.contains("continuar a musica")) {
+        } else if (hasAny(q, "continuar musica", "continua musica", "retomar musica", "retome musica")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
             answer = "Continuando a música.";
-        } else if (q.contains("próxima música") || q.contains("proxima musica") || q.contains("próxima faixa") || q.contains("proxima faixa")) {
+        } else if (hasAny(q, "proxima musica", "proxima faixa", "proxima", "seguinte", "trocar musica", "mudar musica", "troca musica", "muda musica")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_NEXT);
             answer = "Avançando para a próxima música.";
-        } else if (q.contains("música anterior") || q.contains("musica anterior") || q.contains("faixa anterior")) {
+        } else if (hasAny(q, "musica anterior", "faixa anterior", "voltar musica", "anterior")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PREVIOUS);
             answer = "Voltando para a música anterior.";
-        } else if (q.equals("tocar música") || q.equals("tocar musica") || q.equals("tocar")) {
+        } else if (hasAny(q, "tocar musica", "tocar", "iniciar musica", "inicia musica", "dar play", "play")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
             answer = "Iniciando a música.";
-        } else if (q.contains("bluetooth") || q.contains("conectar na central") || q.contains("conectar o carro")) {
+        } else if (hasAny(q, "bluetooth", "conectar na central", "conectar o carro")) {
             openBluetoothSettings();
             answer = "Abrindo as configurações Bluetooth para você conectar a CAR-KIT.";
-        } else if (q.contains("obrigado") || q.contains("obrigada")) {
+        } else if (hasAny(q, "obrigado", "obrigada")) {
             answer = "Sempre às ordens, Carlos.";
         } else {
             answer = "Entendi, Carlos. Ainda estou aprendendo os comandos específicos do seu Gol.";
@@ -140,6 +149,22 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         say(answer);
         if (conversation) status.postDelayed(() -> listenAgain(), Math.max(1800, answer.length() * 55));
+    }
+
+    private String normalize(String text) {
+        return Normalizer.normalize(text, Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9 ]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private boolean hasAny(String text, String... options) {
+        for (String option : options) {
+            if (text.contains(option)) return true;
+        }
+        return false;
     }
 
     private void say(String text) {

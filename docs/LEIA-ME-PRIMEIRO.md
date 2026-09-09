@@ -42,6 +42,7 @@ Depois:
 5. Fale normalmente.
 
 Comandos de mídia disponíveis:
+- diga "JARBAS" antes de cada comando; frases sem essa palavra são ignoradas;
 - "aumentar o volume", "diminuir o volume" ou "silenciar";
 - "tocar música", "pausar a música" ou "continuar a música";
 - "próxima música" ou "música anterior";
