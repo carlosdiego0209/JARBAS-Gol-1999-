@@ -169,8 +169,13 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             answer = "Eu sou JARB, o assistente do seu Gol 1999.";
         } else if (hasAny(q, "bom dia", "boa tarde", "boa noite", "ola", "oi")) {
             answer = greetingForTime();
+        } else if (hasAny(q, "que horas sao", "que horas são", "qual a hora", "horario atual", "horas agora", "hora atual")) {
+            answer = "Agora são " + formatCurrentTime() + ".";
+        } else if (hasAny(q, "como esta o clima", "como está o clima", "clima hoje", "tempo hoje", "vai chover", "esta chovendo", "chuva", "temperatura hoje", "previsao do tempo")) {
+            openWeatherSearch(q);
+            answer = "Vou verificar a previsão do tempo para você.";
         } else if (hasAny(q, "o que voce sabe fazer", "ajuda", "comandos", "o que voce consegue", "me ajude")) {
-            answer = "Posso conversar, pesquisar na internet, controlar volume e música, abrir o Bluetooth e guardar preferências que você me ensinar.";
+            answer = "Posso conversar, pesquisar na internet, controlar volume e música, abrir o Bluetooth, verificar o clima, informar a hora e guardar preferências que você me ensinar.";
         } else if (hasAny(q, "aumentar volume", "aumentar o volume", "aumenta volume", "aumenta o volume", "aumente volume", "aumente o volume", "subir volume", "subir o volume", "sobe volume", "sobe o volume", "mais alto", "aumentar som", "aumentar o som", "aumenta o som", "aumente o som", "volume pra cima")) {
             changeVolume(AudioManager.ADJUST_RAISE);
             answer = "Aumentando o volume.";
@@ -187,18 +192,27 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         } else if (hasAny(q, "abrir spotify", "abre o spotify", "abrir o spotify", "spotify", "tocar spotify")) {
             openSpotify();
             answer = "Abrindo o Spotify.";
+        } else if (hasAny(q, "coloque a musica", "toque a musica", "tocar a musica", "toca a musica", "coloca a musica", "procure a musica", "pesquise a musica", "abrir musica", "musica do spotify", "música do spotify", "coloque a música", "toque a música")) {
+            String track = extractMusicQuery(q);
+            if (!track.isEmpty()) {
+                openSpotifySearch(track);
+                answer = "Procurando no Spotify a música " + track + ".";
+            } else {
+                openSpotify();
+                answer = "Qual música você quer que eu procure no Spotify?";
+            }
         } else if (hasAny(q, "pausar musica", "pausar a musica", "pausa musica", "pausa a musica", "pause a musica", "coloca em pausa", "pare a musica", "parar musica", "pause")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE);
-            answer = "Enviando comando para pausar a música.";
-        } else if (hasAny(q, "continuar musica", "continuar a musica", "continua musica", "continua a musica", "retomar musica", "retome musica", "voltar a tocar", "da play")) {
+            answer = "Música pausada.";
+        } else if (hasAny(q, "continuar musica", "continuar a musica", "continua musica", "continua a musica", "retomar musica", "retome musica", "voltar a tocar", "da play", "continuando a musica")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
-            answer = "Enviando comando para continuar a música.";
+            answer = "Continuando a música, Carlos.";
         } else if (hasAny(q, "proxima musica", "proxima a musica", "proxima faixa", "proxima", "seguinte", "trocar musica", "mudar musica", "troca musica", "muda musica", "pular musica", "pula musica")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_NEXT);
-            answer = "Enviando comando para a próxima música.";
+            answer = "Avançando para a próxima música.";
         } else if (hasAny(q, "musica anterior", "faixa anterior", "voltar musica", "voltar faixa", "musica passada", "anterior")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PREVIOUS);
-            answer = "Enviando comando para a música anterior.";
+            answer = "Voltando para a música anterior.";
         } else if (hasAny(q, "tocar musica", "tocar a musica", "tocar", "iniciar musica", "inicia musica", "dar play", "da play", "play", "reproduzir musica")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
             answer = "Iniciando a música.";
@@ -207,12 +221,14 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             if (search.isEmpty()) search = q;
             openWebSearch(search);
             answer = "Abrindo uma pesquisa na internet.";
-        } else if (hasAny(q, "como esta", "estado do carro", "situacao do carro", "status do carro", "carro")) {
-            answer = "O módulo de diagnóstico ainda está em modo de demonstração. A próxima etapa conecta os sensores reais do Gol.";
-        } else if (q.contains("temperatura")) {
-            answer = "A leitura real da temperatura será fornecida pelo controlador veicular. Neste pacote ela ainda está em modo de demonstração.";
-        } else if (q.contains("bateria")) {
-            answer = "A tensão da bateria será lida pelo módulo veicular. O aplicativo já está preparado para receber essa informação.";
+        } else if (hasAny(q, "como esta", "estado do carro", "situacao do carro", "status do carro", "diagnostico do carro", "diagnóstico do carro", "carro")) {
+            answer = "O módulo de diagnóstico está em demonstração, mas já está preparado para ler sensores e status do Gol 1999.";
+        } else if (hasAny(q, "porta", "janela", "trava", "farol", "farois", "motor", "combustivel", "combustível", "odometro", "odômetro")) {
+            answer = "Esses itens do veículo podem ser monitorados com integração real do carro. Hoje a leitura está em modo de demonstração.";
+        } else if (hasAny(q, "temperatura", "temperatura do carro", "quente", "frio")) {
+            answer = "A temperatura do motor e do ambiente podem ser monitoradas na próxima etapa do módulo veicular. Neste momento está em demonstração.";
+        } else if (hasAny(q, "bateria", "tensao da bateria", "voltagem", "carregando")) {
+            answer = "A tensão da bateria pode ser lida pelo sistema do carro. O aplicativo está pronto para receber esse dado.";
         } else if (hasAny(q, "bluetooth", "conectar na central", "conectar o carro", "conectar car kit", "abrir bluetooth")) {
             openBluetoothSettings();
             answer = "Abrindo as configurações Bluetooth para você conectar a CAR-KIT.";
@@ -310,6 +326,56 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         } else {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://open.spotify.com/")));
         }
+    }
+
+    private void openSpotifySearch(String query) {
+        String safeQuery = query == null ? "" : query.trim();
+        if (safeQuery.isEmpty()) {
+            openSpotify();
+            return;
+        }
+
+        try {
+            Intent spotifySearch = new Intent(Intent.ACTION_VIEW);
+            spotifySearch.setPackage("com.spotify.music");
+            spotifySearch.setData(Uri.parse("spotify:search:" + Uri.encode(safeQuery)));
+            startActivity(spotifySearch);
+        } catch (Exception ignored) {
+            startActivity(new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("https://open.spotify.com/search/" + Uri.encode(safeQuery))));
+        }
+    }
+
+    private String extractMusicQuery(String text) {
+        String cleaned = text.trim();
+        String[] patterns = {
+                "coloque a musica ", "toque a musica ", "tocar a musica ", "toca a musica ",
+                "coloca a musica ", "procure a musica ", "pesquise a musica ", "abrir musica ",
+                "musica do spotify ", "musica ", "música ", "toque ", "toca ", "coloque ", "procure ", "pesquise "
+        };
+
+        for (String pattern : patterns) {
+            if (cleaned.startsWith(pattern)) {
+                return cleaned.substring(pattern.length()).trim();
+            }
+        }
+
+        String regexPrefix = "^(coloque|toque|toca|coloca|procure|pesquise|abrir|reproduzir|play)\\s+(a\\s+)?(musica|música|faixa)\\s*";
+        String withoutPrefix = cleaned.replaceFirst(regexPrefix, "").trim();
+        return withoutPrefix;
+    }
+
+    private String formatCurrentTime() {
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault());
+        return sdf.format(java.util.Calendar.getInstance().getTime());
+    }
+
+    private void openWeatherSearch(String query) {
+        String safeQuery = query == null ? "previsao do tempo hoje" : query;
+        safeQuery = safeQuery.replaceFirst("^(como esta|como está|clima|tempo|vai chover|chuva|previsao do tempo)\\s*", "").trim();
+        if (safeQuery.isEmpty()) safeQuery = "previsao do tempo hoje";
+        startActivity(new Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://www.google.com/search?q=" + Uri.encode("previsão do tempo " + safeQuery))));
     }
 
     private void openWebSearch(String query) {
