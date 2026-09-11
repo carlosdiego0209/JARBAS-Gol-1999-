@@ -26,29 +26,41 @@ jobs:
       - name: Compilar APK de teste
         run: gradle assembleDebug --stacktrace
 
+      - name: Preparar chave de assinatura
+        run: |
+          if [ -z "${{ secrets.JARBAS_KEYSTORE_BASE64 }}" ]; then
+            echo "::warning::Chave persistente ausente. Este APK não poderá atualizar instalações assinadas por outra chave. Configure JARBAS_KEYSTORE_BASE64, JARBAS_KEYSTORE_PASSWORD e JARBAS_KEY_PASSWORD."
+            keytool -genkeypair \
+              -keystore "$RUNNER_TEMP/jarbas-release.keystore" \
+              -storepass android \
+              -keypass android \
+              -alias jarbas \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=JARBAS, OU=Android, O=JARBAS, L=Brasil, ST=SP, C=BR"
+            echo "JARBAS_KEYSTORE_PASSWORD=android" >> "$GITHUB_ENV"
+            echo "JARBAS_KEY_PASSWORD=android" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "${{ secrets.JARBAS_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/jarbas-release.keystore"
+          echo "JARBAS_KEYSTORE_PASSWORD=${{ secrets.JARBAS_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
+          echo "JARBAS_KEY_PASSWORD=${{ secrets.JARBAS_KEY_PASSWORD }}" >> "$GITHUB_ENV"
+
       - name: Assinar APK de teste
         run: |
-          keytool -genkeypair \
-            -keystore "$RUNNER_TEMP/jarbas-debug.keystore" \
-            -storepass android \
-            -keypass android \
-            -alias jarbas \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -dname "CN=JARBAS, OU=Android, O=JARBAS, L=Brasil, ST=SP, C=BR"
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)
           "$APKSIGNER" sign \
-            --ks "$RUNNER_TEMP/jarbas-debug.keystore" \
+            --ks "$RUNNER_TEMP/jarbas-release.keystore" \
             --ks-key-alias jarbas \
-            --ks-pass pass:android \
-            --key-pass pass:android \
+            --ks-pass env:JARBAS_KEYSTORE_PASSWORD \
+            --key-pass env:JARBAS_KEY_PASSWORD \
             --out app/build/outputs/apk/debug/app-debug-signed.apk \
             app/build/outputs/apk/debug/app-debug.apk
 
       - name: Publicar APK
         uses: actions/upload-artifact@v4
         with:
-          name: JARBAS_Gol_1999_v1.0-debug
+          name: JARBAS_Gol_1999_v1.1.0-debug
           path: app/build/outputs/apk/debug/app-debug-signed.apk
           if-no-files-found: error

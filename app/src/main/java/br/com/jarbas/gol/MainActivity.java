@@ -20,7 +20,10 @@ import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.view.View;
 import android.widget.Button;
+import android.widget.PopupMenu;
 import android.widget.TextView;
+import java.io.File;
+import java.io.FileWriter;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -34,7 +37,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private int previousMusicVolume = -1;
     private boolean conversation = false;
     private boolean silentMode = false;
+    private boolean handsFreeMode = false;
     private SharedPreferences memory;
+    private File learningDirectory;
     private final BroadcastReceiver overlayListenReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context context, Intent intent) {
             if (OverlayService.ACTION_LISTEN.equals(intent.getAction())) {
@@ -53,10 +58,15 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         status = findViewById(R.id.status);
         Button listen = findViewById(R.id.listen);
         Button stop = findViewById(R.id.stop);
+        Button menu = findViewById(R.id.menu);
 
         tts = new TextToSpeech(this, this);
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         memory = getSharedPreferences("jarb_memory", MODE_PRIVATE);
+        learningDirectory = new File(getFilesDir(), "jarb_data");
+        if (!learningDirectory.exists()) learningDirectory.mkdirs();
+
+        menu.setOnClickListener(v -> showMainMenu(v));
 
         IntentFilter overlayFilter = new IntentFilter(OverlayService.ACTION_LISTEN);
         if (android.os.Build.VERSION.SDK_INT >= 33) {
@@ -90,8 +100,16 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             public void onEndOfSpeech() { status.setText("Processando..."); }
             public void onError(int e) {
                 restoreMusicVolume();
-                conversation = false;
-                status.setText("Toque em OUVIR JARB para falar.");
+                if (handsFreeMode && !silentMode) {
+                    conversation = true;
+                    status.setText("Não ouvi. Tentando novamente...");
+                    status.postDelayed(() -> {
+                        if (handsFreeMode && !silentMode) listenAgain();
+                    }, 700);
+                } else {
+                    conversation = false;
+                    status.setText("Toque em OUVIR JARB para falar.");
+                }
             }
             public void onResults(Bundle r) {
                 restoreMusicVolume();
@@ -163,6 +181,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     }
 
     private void respond(String text) {
+        logInteraction(text);
         String q = normalize(text);
         q = removeOptionalAssistantPrefix(q);
 
@@ -171,11 +190,28 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         }
 
         if (hasAny(q, "silencio", "fique em silencio", "fica em silencio", "modo silencio", "pare de ouvir",
-            "parar de ouvir", "desligue o microfone", "desativar escuta")) {
+            "parar de ouvir", "desligue o microfone", "desativar escuta", "microfone desligado")) {
             silentMode = true;
+            handsFreeMode = false;
             conversation = false;
             recognizer.cancel();
             status.setText("JARB em silêncio. Toque em OUVIR para reativar.");
+            return;
+        }
+
+        if (hasAny(q, "desligar microfone livre", "desativar maos livres", "desligar maos livres", "microfone fechado", "fechar microfone")) {
+            handsFreeMode = false;
+            silentMode = false;
+            status.setText("Microfone livre desligado.");
+            answerAfterCommand("Microfone livre desligado.");
+            return;
+        }
+
+        if (hasAny(q, "maos livres", "mão livre", "mao livre", "microfone livre", "ligar microfone livre", "mãos livres", "microfone aberto", "abrir microfone")) {
+            handsFreeMode = true;
+            silentMode = false;
+            status.setText("Microfone livre ativado.");
+            answerAfterCommand("Microfone livre ativado.");
             return;
         }
 
@@ -212,11 +248,13 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             answer = "Combinado. Vou chamar você de " + preferredName + ".";
         } else if (hasAny(q, "quem e voce", "quem e o jarb", "seu nome", "como voce se chama")) {
             answer = "Eu sou JARB, o assistente do seu Gol 1999.";
+        } else if (hasAny(q, "como voce esta", "como vc esta", "tudo bem", "voce esta bem")) {
+            answer = "Estou bem e pronto para ajudar. O que você precisa?";
         } else if (hasAny(q, "bom dia", "boa tarde", "boa noite", "ola", "oi")) {
             answer = greetingForTime();
         } else if (hasAny(q, "que horas sao", "que horas são", "qual a hora", "horario atual", "horas agora", "hora atual")) {
             answer = "Agora são " + formatCurrentTime() + ".";
-        } else if (hasAny(q, "como esta o clima", "como está o clima", "clima hoje", "tempo hoje", "vai chover", "esta chovendo", "chuva", "temperatura hoje", "previsao do tempo")) {
+        } else if (hasAny(q, "como esta o clima", "como está o clima", "clima hoje", "tempo hoje", "vai chover", "esta chovendo", "chuva", "temperatura hoje", "previsao do tempo", "verificar o clima", "verificar clima")) {
             openWeatherSearch(q);
             answer = "Vou verificar a previsão do tempo para você.";
         } else if (isNavigationCommand(q)) {
@@ -246,7 +284,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             String track = extractMusicQuery(q);
             if (!track.isEmpty()) {
                 openSpotifySearch(track);
-                answer = "Procurando no Spotify a música " + track + ".";
+                answer = "Procurando e abrindo a música " + track + " no Spotify.";
             } else {
                 openSpotify();
                 answer = "Qual música você quer que eu procure no Spotify?";
@@ -276,6 +314,12 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             answer = "Abrindo uma pesquisa na internet.";
         } else if (hasAny(q, "como esta", "estado do carro", "situacao do carro", "status do carro", "diagnostico do carro", "diagnóstico do carro", "carro")) {
             answer = "O módulo de diagnóstico está em demonstração, mas já está preparado para ler sensores e status do Gol 1999.";
+        } else if (hasAny(q, "travar portas", "trancar portas", "destravar portas", "abrir porta malas", "abrir porta-malas", "fechar portas", "estado das portas")) {
+            answer = "O comando das portas está em demonstração. Para funcionar no carro, será necessário um módulo eletrônico compatível.";
+        } else if (hasAny(q, "ligar ar condicionado", "ligar ar", "desligar ar condicionado", "desligar ar")) {
+            answer = "O ar-condicionado só pode ser acionado com uma integração eletrônica real do veículo. Neste momento está em demonstração.";
+        } else if (hasAny(q, "freio de mao", "freio de mão", "cinto de seguranca", "cinto de segurança", "oleo do motor", "oleo", "óleo")) {
+            answer = "Esse item pode ser monitorado com sensores do veículo. A integração do Gol ainda está em modo de demonstração.";
         } else if (hasAny(q, "porta", "janela", "trava", "farol", "farois", "motor", "combustivel", "combustível", "odometro", "odômetro")) {
             answer = "Esses itens do veículo podem ser monitorados com integração real do carro. Hoje a leitura está em modo de demonstração.";
         } else if (hasAny(q, "temperatura", "temperatura do carro", "quente", "frio")) {
@@ -285,6 +329,12 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         } else if (hasAny(q, "bluetooth", "conectar na central", "conectar o carro", "conectar car kit", "abrir bluetooth")) {
             openBluetoothSettings();
             answer = "Abrindo as configurações Bluetooth para você conectar a CAR-KIT.";
+        } else if (hasAny(q, "ligar farol", "ligar farois", "farol alto", "luz alta", "luz baixa", "ligar luz", "luz do farol", "ligar os farois", "liga farol", "liga farois")) {
+            answer = "Função do veículo em demonstração. O sistema está preparado para receber o comando real do carro quando houver integração com o módulo.";
+        } else if (hasAny(q, "ligar limpador", "ligar limpador de parabrisas", "limpador de para brisas", "limpador", "liga limpador", "ligar para brisas")) {
+            answer = "O comando de limpador de para-brisas está em modo de demonstração para integração real do veículo.";
+        } else if (hasAny(q, "ligar carro", "ligar o carro", "acionar carro", "iniciar carro", "partir carro")) {
+            answer = "O acionamento real do motor exige integração com o sistema do veículo. Neste momento está em modo de demonstração.";
         } else if (hasAny(q, "obrigado", "obrigada")) {
             answer = "Sempre às ordens, Carlos.";
         } else {
@@ -294,6 +344,13 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         learnCommand(q);
         status.setText("JARB: " + answer);
         if (!silentMode) say(answer);
+        if (handsFreeMode) {
+            status.postDelayed(() -> {
+                if (handsFreeMode && !silentMode) {
+                    listenAgain();
+                }
+            }, 700);
+        }
         conversation = false;
     }
 
@@ -301,6 +358,14 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         status.setText("JARB: " + answer);
         if (!silentMode) say(answer);
         conversation = false;
+        if (handsFreeMode && !silentMode) {
+            status.postDelayed(() -> {
+                if (handsFreeMode && !silentMode) {
+                    conversation = true;
+                    listenAgain();
+                }
+            }, 700);
+        }
     }
 
     private boolean isQuietMediaCommand(String text) {
@@ -346,6 +411,16 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private void learnCommand(String command) {
         String key = "count_" + command;
         memory.edit().putInt(key, memory.getInt(key, 0) + 1).apply();
+        if (learningDirectory != null) {
+            File commandFile = new File(learningDirectory, "learned_commands.txt");
+            try {
+                FileWriter writer = new FileWriter(commandFile, true);
+                writer.write(command + System.lineSeparator());
+                writer.flush();
+                writer.close();
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     private void say(String text) {
@@ -370,6 +445,85 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     private void openBluetoothSettings() {
         startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
+    }
+
+    private void showMainMenu(View anchor) {
+        PopupMenu popup = new PopupMenu(this, anchor);
+        popup.getMenu().add(0, 1, 0, handsFreeMode ? "Microfone livre: ON" : "Microfone livre: OFF");
+        popup.getMenu().add(0, 2, 1, "Abrir Spotify");
+        popup.getMenu().add(0, 3, 2, "Abrir clima");
+        popup.getMenu().add(0, 4, 3, "Abrir Waze");
+        popup.getMenu().add(0, 5, 4, "Abrir Bluetooth");
+        popup.getMenu().add(0, 6, 5, "Limpar aprendizado");
+        popup.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == 1) {
+                toggleHandsFreeMode();
+                return true;
+            }
+            if (item.getItemId() == 2) {
+                openSpotify();
+                return true;
+            }
+            if (item.getItemId() == 3) {
+                openWeatherSearch("previsao do tempo hoje");
+                return true;
+            }
+            if (item.getItemId() == 4) {
+                openWaze("local atual");
+                return true;
+            }
+            if (item.getItemId() == 5) {
+                openBluetoothSettings();
+                return true;
+            }
+            if (item.getItemId() == 6) {
+                clearLearnedData();
+                return true;
+            }
+            return false;
+        });
+        popup.show();
+    }
+
+    private void toggleHandsFreeMode() {
+        handsFreeMode = !handsFreeMode;
+        if (handsFreeMode) {
+            silentMode = false;
+            status.setText("Microfone livre ativado.");
+            say("Microfone livre ativado.");
+            status.postDelayed(() -> {
+                if (handsFreeMode) listenAgain();
+            }, 600);
+        } else {
+            status.setText("Microfone livre desligado.");
+            say("Microfone livre desligado.");
+        }
+    }
+
+    private void clearLearnedData() {
+        if (learningDirectory != null && learningDirectory.exists()) {
+            File[] files = learningDirectory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    file.delete();
+                }
+            }
+        }
+        memory.edit().clear().apply();
+        status.setText("Aprendizado local limpo.");
+        say("Aprendizado local limpo.");
+    }
+
+    private void logInteraction(String text) {
+        if (learningDirectory == null || !learningDirectory.exists()) return;
+        try {
+            File logFile = new File(learningDirectory, "interactions.txt");
+            FileWriter writer = new FileWriter(logFile, true);
+            writer.write(text + System.lineSeparator());
+            writer.flush();
+            writer.close();
+        } catch (Exception ignored) {
+        }
     }
 
     private boolean isNavigationCommand(String text) {
@@ -468,6 +622,19 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         String safeQuery = query.isEmpty() ? "Gol 1999" : query;
         startActivity(new Intent(Intent.ACTION_VIEW,
                 Uri.parse("https://www.google.com/search?q=" + Uri.encode(safeQuery))));
+    }
+
+    @Override protected void onDestroy() {
+        if (recognizer != null) {
+            recognizer.cancel();
+            recognizer.destroy();
+        }
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
+        unregisterReceiver(overlayListenReceiver);
+        super.onDestroy();
     }
 
     private String greetingForTime() {
