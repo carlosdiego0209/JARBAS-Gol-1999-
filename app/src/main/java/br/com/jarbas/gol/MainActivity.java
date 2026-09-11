@@ -385,14 +385,19 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     }
 
     private void openWaze(String destination) {
-        Uri destinationUri = Uri.parse("waze://?q=" + Uri.encode(destination) + "&navigate=yes");
+        String encodedDestination = Uri.encode(destination);
+        Uri destinationUri = Uri.parse("https://waze.com/ul?q=" + encodedDestination + "&navigate=yes");
         Intent wazeIntent = new Intent(Intent.ACTION_VIEW, destinationUri);
         wazeIntent.setPackage("com.waze");
         try {
             startActivity(wazeIntent);
         } catch (Exception ignored) {
-            startActivity(new Intent(Intent.ACTION_VIEW,
-                    Uri.parse("https://www.waze.com/ul?q=" + Uri.encode(destination) + "&navigate=yes")));
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW,
+                        Uri.parse("waze://ul?q=" + encodedDestination + "&navigate=yes")));
+            } catch (Exception ignoredAgain) {
+                startActivity(new Intent(Intent.ACTION_VIEW, destinationUri));
+            }
         }
     }
 
