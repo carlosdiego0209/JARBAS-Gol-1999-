@@ -189,9 +189,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         } else if (hasAny(q, "volume minimo", "som minimo", "silenciar", "tirar o som", "sem som", "mudo")) {
             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0);
             answer = "Som silenciado.";
-        } else if (hasAny(q, "abrir spotify", "abre o spotify", "abrir o spotify", "spotify", "tocar spotify")) {
-            openSpotify();
-            answer = "Abrindo o Spotify.";
         } else if (hasAny(q, "coloque a musica", "toque a musica", "tocar a musica", "toca a musica", "coloca a musica", "procure a musica", "pesquise a musica", "abrir musica", "musica do spotify", "música do spotify", "coloque a música", "toque a música")) {
             String track = extractMusicQuery(q);
             if (!track.isEmpty()) {
@@ -201,6 +198,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 openSpotify();
                 answer = "Qual música você quer que eu procure no Spotify?";
             }
+        } else if (hasAny(q, "abrir spotify", "abre o spotify", "abrir o spotify", "spotify", "tocar spotify")) {
+            openSpotify();
+            answer = "Abrindo o Spotify.";
         } else if (hasAny(q, "pausar musica", "pausar a musica", "pausa musica", "pausa a musica", "pause a musica", "coloca em pausa", "pare a musica", "parar musica", "pause")) {
             sendMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE);
             answer = "Música pausada.";
@@ -356,13 +356,17 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         for (String pattern : patterns) {
             if (cleaned.startsWith(pattern)) {
-                return cleaned.substring(pattern.length()).trim();
+                return removeSpotifySuffix(cleaned.substring(pattern.length()).trim());
             }
         }
 
         String regexPrefix = "^(coloque|toque|toca|coloca|procure|pesquise|abrir|reproduzir|play)\\s+(a\\s+)?(musica|música|faixa)\\s*";
         String withoutPrefix = cleaned.replaceFirst(regexPrefix, "").trim();
-        return withoutPrefix;
+        return removeSpotifySuffix(withoutPrefix);
+    }
+
+    private String removeSpotifySuffix(String text) {
+        return text.replaceFirst("\\s+(no|na|em)\\s+spotify$", "").trim();
     }
 
     private String formatCurrentTime() {
