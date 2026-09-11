@@ -667,11 +667,4 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         return fallback;
     }
 
-    @Override protected void onDestroy() {
-        conversation = false;
-        unregisterReceiver(overlayListenReceiver);
-        if (recognizer != null) recognizer.destroy();
-        if (tts != null) { tts.stop(); tts.shutdown(); }
-        super.onDestroy();
-    }
 }

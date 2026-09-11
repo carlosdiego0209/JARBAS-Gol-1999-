@@ -51,6 +51,14 @@
             android:layout_height="70dp"/>
 
         <Button
+            android:id="@+id/menu"
+            android:text="MENU"
+            android:textSize="18sp"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="70dp"/>
+
+        <Button
             android:id="@+id/stop"
             android:text="PARAR"
             android:textSize="18sp"
