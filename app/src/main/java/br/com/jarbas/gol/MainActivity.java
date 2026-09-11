@@ -5,6 +5,9 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.SharedPreferences;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.media.AudioManager;
 import android.speech.tts.Voice;
@@ -32,6 +35,16 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private boolean conversation = false;
     private boolean silentMode = false;
     private SharedPreferences memory;
+    private final BroadcastReceiver overlayListenReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) {
+            if (OverlayService.ACTION_LISTEN.equals(intent.getAction())) {
+                silentMode = false;
+                conversation = true;
+                status.setText("Fale um comando começando com JARB.");
+                listenAgain();
+            }
+        }
+    };
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -44,6 +57,15 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         tts = new TextToSpeech(this, this);
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         memory = getSharedPreferences("jarb_memory", MODE_PRIVATE);
+
+        IntentFilter overlayFilter = new IntentFilter(OverlayService.ACTION_LISTEN);
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(overlayListenReceiver, overlayFilter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(overlayListenReceiver, overlayFilter);
+        }
+
+        startOverlayIfAllowed();
 
         if (android.os.Build.VERSION.SDK_INT >= 23 &&
             checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -102,6 +124,29 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         if (!conversation) return;
         lowerMusicVolume();
         recognizer.startListening(speechIntent);
+    }
+
+    private void startOverlayIfAllowed() {
+        if (!Settings.canDrawOverlays(this)) {
+            status.setText("Para usar o botão flutuante, permita sobreposição nas configurações.");
+            startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName())));
+            return;
+        }
+
+        Intent overlayIntent = new Intent(this, OverlayService.class);
+        if (android.os.Build.VERSION.SDK_INT >= 26) {
+            startForegroundService(overlayIntent);
+        } else {
+            startService(overlayIntent);
+        }
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (recognizer != null && Settings.canDrawOverlays(this)) {
+            startOverlayIfAllowed();
+        }
     }
 
     private void lowerMusicVolume() {
@@ -174,6 +219,14 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         } else if (hasAny(q, "como esta o clima", "como está o clima", "clima hoje", "tempo hoje", "vai chover", "esta chovendo", "chuva", "temperatura hoje", "previsao do tempo")) {
             openWeatherSearch(q);
             answer = "Vou verificar a previsão do tempo para você.";
+        } else if (isNavigationCommand(q)) {
+            String destination = extractDestination(q);
+            if (destination.isEmpty()) {
+                answer = "Qual endereço você quer que eu abra no Waze?";
+            } else {
+                openWaze(destination);
+                answer = "Abrindo o Waze para " + destination + ".";
+            }
         } else if (hasAny(q, "o que voce sabe fazer", "ajuda", "comandos", "o que voce consegue", "me ajude")) {
             answer = "Posso conversar, pesquisar na internet, controlar volume e música, abrir o Bluetooth, verificar o clima, informar a hora e guardar preferências que você me ensinar.";
         } else if (hasAny(q, "aumentar volume", "aumentar o volume", "aumenta volume", "aumenta o volume", "aumente volume", "aumente o volume", "subir volume", "subir o volume", "sobe volume", "sobe o volume", "mais alto", "aumentar som", "aumentar o som", "aumenta o som", "aumente o som", "volume pra cima")) {
@@ -319,6 +372,30 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
     }
 
+    private boolean isNavigationCommand(String text) {
+        return text.startsWith("ir para ") || text.startsWith("me leve para ")
+                || text.startsWith("navegar para ") || text.startsWith("navegue para ")
+                || text.startsWith("abrir rota para ") || text.startsWith("rota para ")
+                || text.startsWith("waze para ") || text.startsWith("va para ")
+                || text.startsWith("vou para ");
+    }
+
+    private String extractDestination(String text) {
+        return text.replaceFirst("^(ir para|me leve para|navegar para|navegue para|abrir rota para|rota para|waze para|va para|vou para)\\s*", "").trim();
+    }
+
+    private void openWaze(String destination) {
+        Uri destinationUri = Uri.parse("waze://?q=" + Uri.encode(destination) + "&navigate=yes");
+        Intent wazeIntent = new Intent(Intent.ACTION_VIEW, destinationUri);
+        wazeIntent.setPackage("com.waze");
+        try {
+            startActivity(wazeIntent);
+        } catch (Exception ignored) {
+            startActivity(new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("https://www.waze.com/ul?q=" + Uri.encode(destination) + "&navigate=yes")));
+        }
+    }
+
     private void openSpotify() {
         Intent spotify = getPackageManager().getLaunchIntentForPackage("com.spotify.music");
         if (spotify != null) {
@@ -420,6 +497,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     @Override protected void onDestroy() {
         conversation = false;
+        unregisterReceiver(overlayListenReceiver);
         if (recognizer != null) recognizer.destroy();
         if (tts != null) { tts.stop(); tts.shutdown(); }
         super.onDestroy();
